@@ -1,0 +1,302 @@
+
+package parkingsystem;
+
+import javafx.application.Application;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.stage.Stage;
+
+// Interface for vehicle
+interface Vehicle {
+    // Method to get the license plate of the vehicle
+    String getLicensePlate();
+
+    // Method to get the brand of the vehicle
+    String getBrand();
+
+    // Method to calculate the parking price for the vehicle
+    double calculatePrice(int hours, int day);
+}
+
+// Concrete class Motorcycle that implements Vehicle interface
+class Motorcycle implements Vehicle {
+    private String licensePlate;
+    private String brand;
+
+    public Motorcycle(String licensePlate, String brand) {
+        this.licensePlate = licensePlate;
+        this.brand = brand;
+    }
+
+    // Implementation of the interface methods
+    @Override
+    public String getLicensePlate() {
+        return licensePlate;
+    }
+
+    @Override
+    public String getBrand() {
+        return brand;
+    }
+
+    @Override
+    public double calculatePrice(int hours, int day) {
+        double price = 2.0; // base price is 2.00 MYR
+
+        // add 1.00 MYR for each additional hour
+        price += hours * 1.0;
+
+        // weekends are 1.00 MYR more expensive
+        if (day == Park.WEEKEND) {
+            price += 1.0;
+        }
+
+        // motorcycles are 1.00 MYR cheaper
+        price -= 1.0;
+
+        return price;
+    }
+}
+
+// Concrete class Car that implements Vehicle interface
+class Car implements Vehicle {
+    private String licensePlate;
+    private String brand;
+
+    public Car(String licensePlate, String brand) {
+        this.licensePlate = licensePlate;
+        this.brand = brand;
+    }
+
+    // Implementation of the interface methods
+    @Override
+    public String getLicensePlate() {
+        return licensePlate;
+    }
+
+    @Override
+    public String getBrand() {
+        return brand;
+    }
+
+    @Override
+    public double calculatePrice(int hours, int day) {
+        double price = 2.0; // base price is 2.00 MYR
+
+        // add 1.00 MYR for each additional hour
+        price += hours * 1.0;
+
+        // weekends are 1.00 MYR more expensive
+        if (day == Park.WEEKEND) {
+            price += 1.0;
+        }
+
+        return price;
+    }
+}
+
+public class ParkingSystem4 extends Application {
+    // constants for the type of vehicle
+    public static final int MOTORCYCLE = 1;
+    public static final int CAR = 2;
+
+    // constants for the day of the week
+    public static final int WEEKDAY = 1;
+    public static final int WEEKEND = 2;
+
+    // 2D array to represent the parking lot
+    // 0 represents an empty space
+    // 1 represents a full space
+    public static int[][] parkingSpaces = new int[5][10];
+
+    // UI components
+    private ComboBox<String> vehicleTypeComboBox;
+    private TextField licensePlateTextField;
+    private TextField brandTextField;
+    private TextField hoursParkedTextField;
+    private RadioButton weekdayRadioButton;
+    private RadioButton weekendRadioButton;
+    private ComboBox<String> paymentMethodComboBox;
+    private Button parkButton;
+    private Button historyButton;
+    private Label levelLabel;
+    private Label slotLabel;
+    private Label priceLabel;
+
+    // Initialize the UI components
+    private void initUIComponents(Stage primaryStage) {
+        vehicleTypeComboBox = new ComboBox<>();
+        vehicleTypeComboBox.getItems().addAll("Motorcycle", "Car");
+        vehicleTypeComboBox.setValue("Motorcycle");
+
+        licensePlateTextField = new TextField();
+        licensePlateTextField.setPromptText("License Plate");
+
+        brandTextField = new TextField();
+        brandTextField.setPromptText("Brand");
+
+        hoursParkedTextField = new TextField();
+        hoursParkedTextField.setPromptText("Hours Parked");
+
+        ToggleGroup dayToggleGroup = new ToggleGroup();
+        weekdayRadioButton = new RadioButton("Weekday");
+        weekdayRadioButton.setToggleGroup(dayToggleGroup);
+        weekdayRadioButton.setSelected(true);
+        weekendRadioButton = new RadioButton("Weekend");
+        weekendRadioButton.setToggleGroup(dayToggleGroup);
+
+        paymentMethodComboBox = new ComboBox<>();
+        paymentMethodComboBox.getItems().addAll("Cash", "Credit Card");
+        paymentMethodComboBox.setValue("Cash");
+
+        parkButton = new Button("Park");
+        parkButton.setOnAction(e -> parkVehicle());
+
+        historyButton = new Button("History");
+        historyButton.setOnAction(e -> showHistory());
+
+        // Level label
+        Label levelTextLabel = new Label("Level:");
+        levelLabel = new Label();
+
+        // Slot label
+        Label slotTextLabel = new Label("Slot:");
+        slotLabel = new Label();
+
+        // Price label
+        Label priceTextLabel = new Label("Price:");
+        priceLabel = new Label();
+
+        // Layout
+        VBox container = new VBox(10);
+        container.setPadding(new Insets(10));
+        container.setAlignment(Pos.CENTER);
+        container.getChildren().addAll(
+                new Label("Vehicle Type:"),
+                vehicleTypeComboBox,
+                new Label("License Plate:"),
+                licensePlateTextField,
+                new Label("Brand:"),
+                brandTextField,
+                new Label("Hours Parked:"),
+                hoursParkedTextField,
+                new Label("Day of the Week:"),
+                new HBox(10, weekdayRadioButton, weekendRadioButton),
+                new Label("Payment Method:"),
+                paymentMethodComboBox,
+                parkButton,
+                historyButton,
+                new HBox(10, levelTextLabel, levelLabel),
+                new HBox(10, slotTextLabel, slotLabel),
+                new HBox(10, priceTextLabel, priceLabel)
+        );
+
+        // Set the scene
+        Scene scene = new Scene(container, 400, 600);
+        primaryStage.setScene(scene);
+        primaryStage.setTitle("Parking System");
+        primaryStage.show();
+    }
+
+    // method to check if a parking space is available
+    public static boolean isSpaceAvailable(int level, int slot) {
+        if (parkingSpaces[level][slot] == 0) {
+            System.out.println("There is an empty parking space at level " + (level + 1) + " slot " + (slot + 1));
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    // method to park a vehicle
+    public void parkVehicle() {
+        // get the selected vehicle type from the combo box
+        int vehicleType = vehicleTypeComboBox.getValue().equals("Motorcycle") ? MOTORCYCLE : CAR;
+
+        // check if all spaces on the level are full
+        boolean isFull = true;
+        int level = 0;
+        for (int i = 0; i < parkingSpaces[level].length; i++) {
+            if (parkingSpaces[level][i] == 0) {
+                isFull = false;
+                break;
+            }
+        }
+
+        // if the level is full, print a message and return
+        if (isFull) {
+            System.out.println("All parking spaces are currently occupied.");
+            return;
+        }
+
+        // find the first empty slot on the level
+        int slot = 0;
+        while (parkingSpaces[level][slot] != 0) {
+            slot++;
+        }
+
+        // create a vehicle object based on the selected vehicle type
+        String licensePlate = licensePlateTextField.getText();
+        String brand = brandTextField.getText();
+        Vehicle vehicle;
+        if (vehicleType == MOTORCYCLE) {
+            vehicle = new Motorcycle(licensePlate, brand);
+        } else {
+            vehicle = new Car(licensePlate, brand);
+        }
+
+        // calculate the price based on the hours parked and day of the week
+        int hoursParked = Integer.parseInt(hoursParkedTextField.getText());
+        int day = weekdayRadioButton.isSelected() ? WEEKDAY : WEEKEND;
+        double price = vehicle.calculatePrice(hoursParked, day);
+
+        // update the parking spaces array
+        parkingSpaces[level][slot] = 1;
+
+        // display the parking information
+        levelLabel.setText(String.valueOf(level + 1));
+        slotLabel.setText(String.valueOf(slot + 1));
+        priceLabel.setText("RM " + String.valueOf(price));
+
+        // show a notification
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Notification");
+        alert.setHeaderText(null);
+        alert.setContentText("Your vehicle has parked successfully!");
+        alert.showAndWait();
+    }
+
+    // method to show the parking history and available spots
+    public void showHistory() {
+        int totalSpaces = parkingSpaces.length * parkingSpaces[0].length;
+        int occupiedSpaces = 0;
+        for (int[] level : parkingSpaces) {
+            for (int slot : level) {
+                if (slot == 1) {
+                    occupiedSpaces++;
+                }
+            }
+        }
+        int availableSpaces = totalSpaces - occupiedSpaces;
+
+        // show the history and available spots in a dialog
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Parking History");
+        alert.setHeaderText(null);
+        alert.setContentText("Number of parked vehicles: " + occupiedSpaces
+                + "\nNumber of available spots: " + availableSpaces);
+        alert.showAndWait();
+    }
+
+    @Override
+    public void start(Stage primaryStage) {
+        initUIComponents(primaryStage);
+    }
+
+    public static void main(String[] args) {
+        launch(args);
+    }
+}
